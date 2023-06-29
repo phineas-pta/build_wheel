@@ -29,7 +29,7 @@ jobs:
 
     - name: 🛠️ install pip requirements
       working-directory: insightface
-      run: pip install -r requirements.txt -q --progress-bar off
+      run: pip install -r requirements.txt --progress-bar off
 
     - name: 📦 build C++ extension
       working-directory: insightface/python-package/insightface/thirdparty/face3d/mesh/cython
@@ -37,12 +37,12 @@ jobs:
       # see https://github.com/pypa/cibuildwheel/issues/404
 
     - name: 📦 build wheel
-      run: pip wheel insightface/python-package --no-deps --progress-bar off
+      run: pip wheel insightface/python-package --progress-bar off
 
     - uses: svenstaro/upload-release-action@v2
       with:
         file_glob: true
-        file: ./*.whl
+        file: ./insightface*.whl
 
   onnxruntime:
     name: 🍏 Build onnxruntime wheels
@@ -50,6 +50,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.10", "3.11"]
+        # 3.10 is x64 binary, 3.11 is universal2, no arm64 yet
     permissions:
       contents: write
     steps:
@@ -67,15 +68,28 @@ jobs:
 
     - name: 🛠️ install pip requirements
       working-directory: onnxruntime
-      run: pip install -r requirements-dev.txt -q --progress-bar off
+      run: pip install -r requirements-dev.txt --progress-bar off
 
     - name: 📦 build wheel
       working-directory: onnxruntime
-      run: python3 tools/ci_build/build.py --build_dir build/MacOS --skip-keras-test --skip_tests --config=Release --enable_pybind --build_wheel --wheel_name_suffix=-silicon --osx_arch=arm64 --use_coreml --parallel=3
+      run: python3 tools/ci_build/build.py
+        --build_dir=build/MacOS
+        --config=Release
+        --enable_pybind
+        --build_wheel
+        --compile_no_warning_as_error
+        --parallel
+        --skip-keras-test
+        --skip_tests
+        --wheel_name_suffix=-silicon
+        --osx_arch=arm64
+        --use_coreml
+        --apple_deploy_target=11
       # see https://github.com/cansik/onnxruntime-silicon/blob/main/build-macos.sh
       # github runner macos cpu only has 3 cores (XL runner can have 12)
+      # if needed, get macOS version with "$(sw_vers -productVersion | head -c2)"
 
     - uses: svenstaro/upload-release-action@v2
       with:
         file_glob: true
-        file: onnxruntime/build/MacOS/Release/dist/*.whl
+        file: onnxruntime/build/MacOS/Release/dist/onnxruntime*.whl
