@@ -1,0 +1,81 @@
+name: 🖥️ 🛠️ 🐍 🛞 📦
+on:
+  push:
+    tags:
+    - '*'
+jobs:
+
+  insightface:
+    name: 🪟 Build insightface wheels
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+    permissions:
+      contents: write
+    steps:
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - uses: ilammy/msvc-dev-cmd@v1
+      # see https://github.com/pypa/cibuildwheel/issues/643
+
+    - uses: actions/checkout@v3
+      with:
+        repository: deepinsight/insightface
+        path: insightface
+
+    - name: 🛠️ install pip requirements
+      working-directory: insightface
+      run: pip install -r requirements.txt -q --progress-bar off
+
+    - name: 📦 build C++ extension
+      working-directory: insightface/python-package/insightface/thirdparty/face3d/mesh/cython
+      run: python setup.py build_ext --inplace
+      # see https://github.com/pypa/cibuildwheel/issues/404
+
+    - name: 📦 build wheel
+      run: pip wheel insightface/python-package --no-deps --progress-bar off
+
+    - uses: svenstaro/upload-release-action@v2
+      with:
+        file_glob: true
+        file: ./*.whl
+
+  onnxruntime:
+    name: 🍏 Build onnxruntime wheels
+    runs-on: macos-13 # macos-latest still v12 monterey and ~2× slower
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+    permissions:
+      contents: write
+    steps:
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - uses: actions/checkout@v3
+      with:
+        repository: verback2308/onnxruntime
+        path: onnxruntime
+        ref: rel-1.14.2
+        submodules: true
+
+    - name: 🛠️ install pip requirements
+      working-directory: onnxruntime
+      run: pip install -r requirements-dev.txt -q --progress-bar off
+
+    - name: 📦 build wheel
+      working-directory: onnxruntime
+      run: python3 tools/ci_build/build.py --build_dir build/MacOS --skip-keras-test --skip_tests --config=Release --enable_pybind --build_wheel --wheel_name_suffix=-silicon --osx_arch=arm64 --use_coreml --parallel=3
+      # see https://github.com/cansik/onnxruntime-silicon/blob/main/build-macos.sh
+      # github runner macos cpu only has 3 cores (XL runner can have 12)
+
+    - uses: svenstaro/upload-release-action@v2
+      with:
+        file_glob: true
+        file: onnxruntime/build/MacOS/Release/dist/*.whl
