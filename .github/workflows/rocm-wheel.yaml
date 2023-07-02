@@ -1,0 +1,46 @@
+name: 🎪 🖥️ 🛠️
+on: push
+jobs:
+
+  rocm:
+    name: 🐧 Build onnxruntime-rocm wheels
+    runs-on: ubuntu-latest
+    container:
+      image: rocm/tensorflow-build:latest-python3.10-rocm5.4.0
+      volumes:
+        - ${{ github.workspace }}:/code
+    steps:
+
+    - uses: actions/checkout@v3
+      with:
+        repository: Microsoft/onnxruntime
+        path: onnxruntime
+        ref: rel-1.15.0
+        submodules: true
+
+    - name: 🛠️ download cmake
+      run: |
+        wget --quiet https://github.com/Kitware/CMake/releases/download/v3.26.3/cmake-3.26.3-linux-x86_64.tar.gz
+        tar zxf cmake-3.26.3-linux-x86_64.tar.gz
+        rm cmake-3.26.3-linux-x86_64.tar.gz
+
+    - name: 🛠️ 📦 install & build
+      run: |
+        cd /code/onnxruntime
+        export PATH=/code/cmake-3.26.3-linux-x86_64/bin:$PATH
+        python3.10 -m pip install -r requirements-dev.txt
+        python3.10 tools/ci_build/build.py \
+          --build_dir=build/Linux \
+          --config=Release \
+          --enable_pybind \
+          --build_wheel \
+          --compile_no_warning_as_error \
+          --parallel \
+          --skip-keras-test \
+          --skip_tests \
+          --use_rocm \
+          --rocm_home=/opt/rocm
+
+    - uses: actions/upload-artifact@v3
+      with:
+        path: onnxruntime/build/Linux/Release/dist/onnxruntime*.whl
