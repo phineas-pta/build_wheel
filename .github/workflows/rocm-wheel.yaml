@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: rocm/tensorflow-build:latest-python3.10-rocm5.4.0
+      env:
+        PATH: /code/cmake-3.26.3-linux-x86_64/bin:${PATH}
       volumes:
         - ${{ github.workspace }}:/code
     steps:
@@ -27,9 +29,9 @@ jobs:
     - name: 🛠️ 📦 install & build
       run: |
         cd /code/onnxruntime
-        export PATH=/code/cmake-3.26.3-linux-x86_64/bin:$PATH
         python3.10 -m pip install -r requirements-dev.txt
         python3.10 tools/ci_build/build.py \
+          --allow_running_as_root \
           --build_dir=build/Linux \
           --config=Release \
           --enable_pybind \
