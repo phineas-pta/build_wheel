@@ -36,11 +36,10 @@ jobs:
           --enable_pybind \
           --build_wheel \
           --compile_no_warning_as_error \
-          --parallel \
           --skip-keras-test \
           --skip_tests \
           --use_rocm \
-          --rocm_home=/opt/rocm
+          --rocm_home=$ROCM_PATH
 
     - uses: actions/upload-artifact@v3
       with:
