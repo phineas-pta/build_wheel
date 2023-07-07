@@ -6,7 +6,7 @@ jobs:
     name: 🐧 Build onnxruntime-rocm wheels
     runs-on: ubuntu-latest
     container:
-      image: rocm/tensorflow-build:latest-python3.10-rocm5.4.0
+      image: rocm/jax-build:rocm5.4.0-jax0.4.6.540-py3.10.0
       volumes:
         - ${{ github.workspace }}:/code
     steps:
@@ -23,21 +23,19 @@ jobs:
         cmakeVersion: 3.26.3
 
     - name: 🛠️ 📦 install & build
-      run: |
-        cd /code/onnxruntime
-        python3.10 -m pip install -r requirements-dev.txt
-        python3.10 tools/ci_build/build.py \
-          --allow_running_as_root \
-          --build_dir=build/Linux \
-          --config=Release \
-          --enable_pybind \
-          --build_wheel \
-          --compile_no_warning_as_error \
-          --parallel \
-          --skip-keras-test \
-          --skip_tests \
-          --use_rocm \
-          --rocm_home=$ROCM_PATH
+      working-directory: onnxruntime
+      run: python3.10 tools/ci_build/build.py
+        --allow_running_as_root
+        --build_dir=build/Linux
+        --config=Release
+        --enable_pybind
+        --build_wheel
+        --compile_no_warning_as_error
+        --parallel
+        --skip-keras-test
+        --skip_tests
+        --use_rocm
+        --rocm_home=$ROCM_PATH
 
     - uses: actions/upload-artifact@v3
       with:
