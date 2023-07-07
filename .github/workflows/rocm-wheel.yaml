@@ -5,26 +5,32 @@ jobs:
   rocm:
     name: 🐧 Build onnxruntime-rocm wheels
     runs-on: ubuntu-latest
-    container:
-      image: rocm/jax-build:rocm5.4.0-jax0.4.6.540-py3.10.0
-      volumes:
-        - ${{ github.workspace }}:/code
     steps:
-
-    - uses: actions/checkout@v3
-      with:
-        repository: Microsoft/onnxruntime
-        path: onnxruntime
-        ref: rel-1.15.0
-        submodules: true
 
     - uses: lukka/get-cmake@latest
       with:
         cmakeVersion: 3.26.3
 
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.10
+
+    - uses: actions/checkout@v3
+      with:
+        repository: microsoft/onnxruntime
+        path: onnxruntime
+        ref: rel-1.15.0
+        submodules: true
+
+    - name: ROCm
+      run: |
+        wget -O amdgpuinst.py --no-cache --no-check-certificate https://raw.githubusercontent.com/srinivamd/rocminstaller/master/amdgpuinst.py
+        python amdgpuinst.py --rev 5.4.2 --nokernel --nomiopenkernels
+        pip install -r onnxruntime/requirements-dev.txt --progress-bar off
+
     - name: 🛠️ 📦 install & build
       working-directory: onnxruntime
-      run: python3.10 tools/ci_build/build.py
+      run: python tools/ci_build/build.py
         --allow_running_as_root
         --build_dir=build/Linux
         --config=Release
@@ -35,7 +41,7 @@ jobs:
         --skip-keras-test
         --skip_tests
         --use_rocm
-        --rocm_home=$ROCM_PATH
+        --rocm_home=/opt/rocm
 
     - uses: actions/upload-artifact@v3
       with:
