@@ -17,11 +17,6 @@ jobs:
 
     - uses: actions/checkout@v3
       with:
-        repository: srinivamd/rocminstaller
-        path: rocminstaller
-
-    - uses: actions/checkout@v3
-      with:
         repository: microsoft/onnxruntime
         path: onnxruntime
         ref: rel-1.15.0
@@ -29,8 +24,8 @@ jobs:
 
     - name: 🛠️ install ROCm
       run: |
-        python rocminstaller/rocmuninstall.py --rev 5.4.2 --nokernel --nomiopenkernels
-        pip install -r onnxruntime/requirements-dev.txt --progress-bar off
+        wget -O rocminstall.py https://raw.githubusercontent.com/srinivamd/rocminstaller/master/rocminstall.py
+        python rocmuninstall.py --rev 5.4.2 --nokernel --nomiopenkernels
 
     - name: 📦 build
       working-directory: onnxruntime
@@ -44,8 +39,9 @@ jobs:
         --parallel
         --skip-keras-test
         --skip_tests
+        --numpy_version=1.23.5
         --use_rocm
-        --rocm_home=/opt/rocm
+        --rocm_home=/opt/rocm-5.4.2
 
     - uses: actions/upload-artifact@v3
       with:
