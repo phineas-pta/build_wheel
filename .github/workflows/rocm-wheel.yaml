@@ -5,35 +5,33 @@ jobs:
   rocm:
     name: 🐧 Build onnxruntime-rocm wheels
     runs-on: ubuntu-latest
+    container:
+      image: rocm/jax-build:rocm5.4.0-jax0.4.6.540-py3.10.0
+      volumes:
+        - ${{ github.workspace }}:/code
     steps:
+
+    - uses: easimon/maximize-build-space@master
+      with:
+        remove-dotnet: true
+        remove-android: true
+        remove-haskell: true
+        remove-codeql: true
+
+    - uses: actions/checkout@v3
+      with:
+        repository: Microsoft/onnxruntime
+        path: onnxruntime
+        ref: rel-1.15.0
+        submodules: true
 
     - uses: lukka/get-cmake@latest
       with:
         cmakeVersion: 3.26.3
 
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-
-    - uses: actions/checkout@v3
-      with:
-        repository: srinivamd/rocminstaller
-        path: rocminstaller
-
-    - uses: actions/checkout@v3
-      with:
-        repository: microsoft/onnxruntime
-        path: onnxruntime
-        ref: rel-1.15.0
-        submodules: true
-
-    - name: 🛠️ install ROCm
-      working-directory: rocminstaller
-      run: python rocminstall.py --rev 5.4.2 --nokernel --nomiopenkernels
-
-    - name: 📦 build
+    - name: 🛠️ 📦 install & build
       working-directory: onnxruntime
-      run: python tools/ci_build/build.py
+      run: python3.10 tools/ci_build/build.py
         --allow_running_as_root
         --build_dir=build/Linux
         --config=Release
@@ -43,9 +41,8 @@ jobs:
         --parallel
         --skip-keras-test
         --skip_tests
-        --numpy_version=1.23.5
         --use_rocm
-        --rocm_home=/opt/rocm-5.4.2
+        --rocm_home=$ROCM_PATH
 
     - uses: actions/upload-artifact@v3
       with:
