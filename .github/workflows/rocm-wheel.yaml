@@ -5,10 +5,6 @@ jobs:
   rocm:
     name: 🐧 Build onnxruntime-rocm wheels
     runs-on: ubuntu-latest
-    container:
-      image: rocm/jax-build:rocm5.4.0-jax0.4.6.540-py3.10.0
-      volumes:
-        - ${{ github.workspace }}:/code
     steps:
 
     - uses: easimon/maximize-build-space@master
@@ -17,33 +13,19 @@ jobs:
         remove-android: true
         remove-haskell: true
         remove-codeql: true
+        remove-docker-images: true
 
-    - uses: actions/checkout@v3
+    - uses: docker/setup-buildx-action@v2
+    - uses: docker/build-push-action@v4
       with:
-        repository: Microsoft/onnxruntime
-        path: onnxruntime
-        ref: rel-1.15.0
-        submodules: true
+        tags: onnxruntime-rocm
 
-    - uses: lukka/get-cmake@latest
+    - uses: addnab/docker-run-action@v3
       with:
-        cmakeVersion: 3.26.3
-
-    - name: 🛠️ 📦 install & build
-      working-directory: onnxruntime
-      run: python3.10 tools/ci_build/build.py
-        --allow_running_as_root
-        --build_dir=build/Linux
-        --config=Release
-        --enable_pybind
-        --build_wheel
-        --compile_no_warning_as_error
-        --parallel
-        --skip-keras-test
-        --skip_tests
-        --use_rocm
-        --rocm_home=$ROCM_PATH
+        image: onnxruntime-rocm
+        options: -v ${{ github.workspace }}:/opt/mount
+        run: cp -r /code/onnxruntime/build/Linux/Release/dist/*.whl /opt/mount
 
     - uses: actions/upload-artifact@v3
       with:
-        path: onnxruntime/build/Linux/Release/dist/onnxruntime*.whl
+        path: onnxruntime*.whl
