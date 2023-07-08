@@ -18,7 +18,6 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v3.26.3/cmak
       --enable_pybind \
       --build_wheel \
       --compile_no_warning_as_error \
-      --parallel \
       --skip-keras-test \
       --skip_tests \
       --numpy_version=1.23.5 \
