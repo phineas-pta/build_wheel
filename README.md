@@ -134,6 +134,6 @@ Windows + AMD GPU → DirectML → need `pip install torch-directml tensorflow-d
 
 Linux + AMD GPU → ROCm → need `pip install tensorflow-rocm`, built above `onnxruntime-rocm` wheel and `torch torchvision --index-url https://download.pytorch.org/whl/rocm5.4.2`
 
-Apple Silicon → DirectML + Metal → need `pip install tensorflow-macos tensorflow-metal`, built above `onnxruntime-coreml` wheel and when use `torch device "mps"`
+Apple Silicon → DirectML + Metal → need `pip install tensorflow-macos tensorflow-metal`, built above `onnxruntime-silicon` wheel and additionally `torch device "mps"`
 
 intel cpu only → OpenVino + Ipex → need `pip install onnxruntime-openvino intel_extension_for_pytorch`
