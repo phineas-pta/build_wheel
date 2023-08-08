@@ -100,7 +100,7 @@ ENV PATH /code/cmake-3.26.3-linux-x86_64/bin:${PATH}
 
 RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v3.26.3/cmake-3.26.3-linux-x86_64.tar.gz &&\
     tar zxf cmake-3.26.3-linux-x86_64.tar.gz &&\
-    git clone --single-branch --branch rel-1.15.0 --recursive https://github.com/Microsoft/onnxruntime &&\
+    git clone --single-branch --branch rel-1.15.0 --recursive https://github.com/microsoft/onnxruntime &&\
     cd onnxruntime &&\
     python3.10 -m pip install -r requirements-dev.txt &&\
     python3.10 tools/ci_build/build.py \
@@ -134,6 +134,6 @@ Windows + AMD GPU → DirectML → need `pip install torch-directml tensorflow-d
 
 Linux + AMD GPU → ROCm → need `pip install tensorflow-rocm`, built above `onnxruntime-rocm` wheel and `torch torchvision --index-url https://download.pytorch.org/whl/rocm5.4.2`
 
-Apple Silicon → DirectML + Metal → need `pip install tensorflow-macos tensorflow-metal`, built above `onnxruntime-silicon` wheel and additionally `torch device "mps"`
+Apple Silicon → CoreML + Metal → need `pip install tensorflow-macos tensorflow-metal`, built above `onnxruntime-silicon` wheel and additionally `torch device "mps"`
 
-intel cpu only → OpenVino + Ipex → need `pip install onnxruntime-openvino intel_extension_for_pytorch`
+Intel hardware only → OpenVino + Ipex → need `pip install onnxruntime-openvino intel_extension_for_pytorch`
