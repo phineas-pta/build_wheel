@@ -1,6 +1,6 @@
 # build some wheels
 
-unofficial helper for `roop` users: https://github.com/s0md3v/roop
+unofficial helper for `roop` users: https://github.com/s0md3v/roop<br />also other projects derived from `roop`
 
 some packages are difficult to install with `pip`
 
@@ -45,7 +45,7 @@ install build tools `brew install cmake pkg-config wget git git-lfs protobuf`
 
 prepare another `venv` / `pyenv` / `conda` environment with python3.10 (compatible with `roop`)
 
-clone the repo (pretty heavy but “download as zip” cause building error) `git clone --single-branch --branch rel-1.14.2 --recursive https://github.com/verback2308/onnxruntime`
+clone the repo (pretty heavy but “download as zip” cause building error) `git clone --single-branch --branch rel-1.14.2 --depth 1 --recurse-submodules --shallow-submodules https://github.com/verback2308/onnxruntime`
 
 install building dependencies `pip install -r requirements-dev.txt`
 
@@ -61,7 +61,7 @@ python3 tools/ci_build/build.py \
   --parallel \
   --skip-keras-test \
   --skip_tests \
-  --numpy_version=1.23.5 \
+  --numpy_version=1.24.3 \
   --wheel_name_suffix=-silicon \
   --osx_arch=arm64 \
   --use_coreml
@@ -100,7 +100,13 @@ ENV PATH /code/cmake-3.26.3-linux-x86_64/bin:${PATH}
 
 RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v3.26.3/cmake-3.26.3-linux-x86_64.tar.gz &&\
     tar zxf cmake-3.26.3-linux-x86_64.tar.gz &&\
-    git clone --single-branch --branch rel-1.15.0 --recursive https://github.com/microsoft/onnxruntime &&\
+    git clone \
+      --single-branch \
+      --branch rel-1.15.0 \
+      --depth 1 \
+      --recurse-submodules \
+      --shallow-submodules \
+      https://github.com/microsoft/onnxruntime &&\
     cd onnxruntime &&\
     python3.10 -m pip install -r requirements-dev.txt &&\
     python3.10 tools/ci_build/build.py \
@@ -113,7 +119,7 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v3.26.3/cmak
       --parallel \
       --skip-keras-test \
       --skip_tests \
-      --numpy_version=1.23.5 \
+      --numpy_version=1.24.3 \
       --use_rocm \
       --rocm_home=$ROCM_PATH
 ```
