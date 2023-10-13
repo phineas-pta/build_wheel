@@ -134,6 +134,92 @@ get image file size `docker inspect -f "{{ .Size }}" onnxruntime-rocm | numfmt -
 
 remove image `docker rmi -f onnxruntime-rocm`
 
+**UPDATE** with `facefusion`
+
+```dockerfile
+ARG ROCM_VERSION=5.6
+ARG CMAKE_VERSION=3.27.4
+ARG ONNXRUNTIME_VERSION=1.16.0
+ARG NUMPY_VERSION=1.24.3
+ARG FACEFUSION_VERSION=1.3.1
+
+FROM rocm/dev-ubuntu-22.04:${ROCM_VERSION}-complete AS base
+
+RUN apt-get update
+RUN apt-get install -y wget git python3-dev ffmpeg
+
+# ~14gb rocm
+
+###############################################################################
+
+FROM base AS builder
+
+ARG CMAKE_VERSION
+ARG ONNXRUNTIME_VERSION
+ARG NUMPY_VERSION
+ARG CMAKE_FULL="cmake-${CMAKE_VERSION}-linux-x86_64"
+
+RUN wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_FULL}.tar.gz
+RUN tar zxf ${CMAKE_FULL}.tar.gz
+ENV PATH /${CMAKE_FULL}/bin:${PATH}
+
+RUN git clone \
+      --depth 1 \
+      --single-branch \
+      --branch "rel-${ONNXRUNTIME_VERSION}" \
+      --recurse-submodules \
+      --shallow-submodules \
+      https://github.com/microsoft/onnxruntime
+
+WORKDIR /onnxruntime
+
+RUN python3 -m pip install -q ninja
+RUN python3 tools/ci_build/build.py \
+      --allow_running_as_root \
+      --build_dir "build" \
+      --config "Release" \
+      --enable_pybind \
+      --build_wheel \
+      --cmake_generator "Ninja" \
+      --compile_no_warning_as_error \
+      --parallel \
+      --skip_tests \
+      --skip_submodule_sync \
+      --numpy_version $NUMPY_VERSION \
+      --use_rocm \
+      --enable_nccl \
+      --rocm_home /opt/rocm \
+      --nccl_home /opt/rocm
+
+# 14gb rocm + 4gb onnxruntime
+
+###############################################################################
+
+FROM base AS server
+
+ARG ROCM_VERSION
+ARG FACEFUSION_VERSION
+
+RUN wget -q https://github.com/facefusion/facefusion/archive/refs/tags/${FACEFUSION_VERSION}.tar.gz
+RUN tar zxf ${FACEFUSION_VERSION}.tar.gz
+RUN mv /facefusion-${FACEFUSION_VERSION} /facefusion
+
+WORKDIR /facefusion
+
+COPY --from=builder /onnxruntime/build/Release/dist /mywheels
+
+RUN pip install \
+      -q --no-cache-dir \
+      -r requirements.txt \
+      --extra-index-url https://download.pytorch.org/whl/rocm${ROCM_VERSION}
+RUN pip uninstall -y onnxruntime
+RUN pip install /mywheels/*.whl
+
+ENV GRADIO_SERVER_NAME=0.0.0.0
+
+# 14gb rocm + 14gb python (torch ~8gb), if enable + 6gb pip cache
+```
+
 ## misc
 
 Windows + AMD GPU → DirectML → need `pip install torch-directml tensorflow-directml onnxruntime-directml`
